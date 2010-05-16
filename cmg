@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+from cmglib import commands
+from cmglib import common
+
+def main_usage():
+    print("""
+CMGlue (Configuration Management Glue) is a better git-submodule, 
+to manage a workspace which may contains multiple components
+that may from various version control tools such as Git and SVN (Subversion), 
+or even just from a shared folder.
+
+Usage: cmg [-v|--version] [-h|--help] COMMAND [ARGS]
+
+COMMAND could be:
+   download     Download/sync/update from remote repositories/places to local
+   status       Show status/diff information of container and each component
+   upload       Upload/deliver local modifications to remote repositories
+   freeze       Create baseline
+                
+See 'cmg COMMAND -h' for more information on a specific command.
+""")
+
+def main():
+
+#    if version < '3.0.0':
+#        print("Warning: CMG should run on python 3.0 or higher, but currently " + version)
+
+    if len(sys.argv) < 2:
+        sys.stderr.write("Wrong format of command line paramaters.")
+        main_usage()
+        sys.exit(2)
+    elif sys.argv[1] in ('-h', "--help"):
+        main_usage()
+        sys.exit()
+    elif sys.argv[1] in ('-v', "--version"):
+        print("CMG version is ", common.VERSION) 
+        sys.exit()
+    elif sys.argv[1][0] == '-':
+        sys.stderr.write("'" + sys.argv[1] + "' is an unknown option.")
+        main_usage()
+        sys.exit(2)
+    elif sys.argv[1] == "download":
+        commands.download((sys.argv[2:]))
+    elif sys.argv[1] == "status":
+        commands.status(sys.argv[2:])
+    elif sys.argv[1] == "upload":
+        commands.upload(sys.argv[2:])
+    elif sys.argv[1] == "freeze":
+        commands.freeze(sys.argv[2:])
+    else:
+        sys.stderr.write("'" + sys.argv[1] + "' is not a CMG command.")
+        main_usage()
+        sys.exit(2)
+
+if __name__ == '__main__': main()

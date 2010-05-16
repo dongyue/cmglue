@@ -1,0 +1,1138 @@
+.. -*- coding: utf-8 -*-
+
+=============
+CMGlue Manual
+=============
+
+:Date: 2010-05-11
+:Revision: 0.5
+:Web site: (TBD)
+:Copyright: (TBD)
+
+.. contents::
+.. sectnum::
+
+Take a glance
+=============
+
+What's CMGlue?
+--------------
+
+CMGlue (Configuration Management Glue) is a better git-submodule, 
+to manage a workspace which may contains multiple components
+that may from various version control tools such as Git and SVN (Subversion), 
+or even just from a shared folder.
+
+Note: currently CMGlue supports Git only.
+
+Why CMGlue?
+-----------
+
+As best practice, all files of a project should be put into 
+one repository of a version control tool, managed as a whole. 
+But there are exceptions:
+
+* Some parts are shared by multiple projects.
+* Some parts are developed by another team insisting to use another version control tool.
+* Some parts are rarely to change so that unnecessary to build for each time.
+* Some parts has no source code but a binary from 3rd party.
+
+As experiences from many people, these kinds of situation bring in much manual work, much time, and error-prone.
+How about have a tool to manage this? Idealy, it should be able to handle:
+
+* A workspace consists of multiple compononents from multiple repositories.
+* Here the repository maybe Git's public repository, Subversion's repository, ClearCase's VOB, etc.
+* Even, the repository may just means a shared folder, which always contains some binaries.
+* 'Download' from the repositories, without overwrite local modifications.
+* For each part, 'download' a given tag, or always 'download' the tip of a branch, automatically. 
+* Know the local modifications of each part.
+* 'Upload' local modifications to the repositories.
+* Create and record the 'snapshot' of the whole project.
+* ...
+
+That's why CMGlue comes.
+
+A quick tour
+------------
+
+Firstly you need to install CMGlue and creat the demo environment. 
+See section Installation_ below.
+
+Please go to the empty directory *tom* in the demo environment, and run: (On Linux)
+
+::
+    
+    git clone ../remote/container.git workspace
+
+Or on Windows:
+
+::
+    
+    git clone ..\remote\container.git workspace
+
+
+You have your workspace now, although it's almost empty. 
+Go to the *workspace* directory and run following command to get the content::
+
+    cmg download stream1
+
+*stream1* is a stream of this project, which maps to branch *stream1* of the container,
+branch *comp1_br1* of *component1* and tag *comp2_tag1* of *component2*. 
+This command will firstly check out the branch *stream1* of the container,
+and then read the stream config file *_stream* to download two components accordingly.
+
+After you download *stream1* successfuly, in any directories of this project,
+you may modify some file(s), add some new file(s), and even do some local commit(s). 
+After that, you may run following command::
+
+    cmg status
+
+This command will report you what you have done, in the container and every components of this project.
+
+To upload your change to public, you may run::
+
+    cmg upload
+
+In this demo it will just 'upload' to the *remote* directory in your demo environment, but it could be
+some real public remote repositories in your real work.
+
+Now you get some feeling about CMGlue?
+
+
+.. _Installation:
+
+Installation
+============
+
+Prerequisites
+-------------
+
+1. Git should be installed. Type below to verify::
+
+    git --help
+    
+Besides using your package management tool (on Linux),
+you may try this link to download Git and install: http://git-scm.com/download
+
+2. Git settings: Make sure you set *user.name* and *user.email* in Git.
+
+3. Git settings: Make sure you set *merge.tool* in Git. (Always *kdiff3*)
+
+4. Git settings: Make sure the value of *color.ui* is **not** *always*. 
+   *auto* is OK. 
+
+5. Git settings: Make sure the value of *core.editor* is a text editor and
+   **works well** with Git. 
+   It could be *nano* on Linux, or *AkelPad.exe* on Windows.
+
+6. SVN and so on should be installed, if some of your codes are under their 
+   control.
+
+7. Python version 3.0 or above should be installed. 
+   Type below to verify (on Linux)::
+
+    python3 --version
+
+On Windows please use::
+
+    python --version
+   
+Besides using your package management tool (on Linux),
+you may try this link to dowload Python and install: 
+http://www.python.org/ftp/python/
+
+8. Make sure your PATH's value includes Python's path and Python's scripts'
+   path. On Windows it might be::
+
+    C:\Python31;C:\Python31\Scripts
+    
+On Unix you needn't set it generally.
+
+    
+Install
+-------
+
+Un-zip/un-package CMGlue installation package, enter the directory, 
+and then (On Linux)::
+    
+    sudo ./setup.py install
+    
+On Windows it probably be::
+
+    setup.py install
+
+That's all. For more options and information about Python packages installation:
+http://docs.python.org/py3k/install/index.html
+
+Test & Demo
+-----------
+
+To test the installation, under any path run::
+
+  cmg --help
+
+To create the environment for a demo, under any path run::
+
+  cmg_create_demo
+
+If you are on Linux, it in fact called 
+(such as) */usr/local/bin/cmg_create_demo*,
+to create a demo environement under *~/cmg_demo*.
+
+If you are on Windows, it in fact called
+(such as) *C:\\Python31\\Scripts\\cmg_create_demo.bat*,
+to create a demo environement under *C:\\cmg_demo*.
+
+Concepts
+========
+
+In the comming chapters, we will use following terms for convenience: 
+
+- **Workspace**
+
+  It's a local directory that includes all necessary files for a developer to develope the project.
+  Typically, a workspace consists of several components' contents.
+  See below for details.
+
+- **Component**
+
+  From CM (Configuration Management) point of view,
+  a component is just a group of files and directories under one top directory that always be handled as one unit when CM operations.
+  Occationally, a compnent may just be one file.
+  In remote, it's stored in public repository of a version control tool or a shared place.
+  In local, it locates in some place in the workspace. The user may modify its content then.
+
+  Various version control tools:
+  
+  - If the component is managed in **Git**: 
+
+    In remote, it maps to a public Git repository. 
+    In local, in workspace it maps to a directory which is a Git working tree, 
+    including .git directory which is a local Git repository.
+  
+  - If the component is managed in **SVN**:
+
+    In remote, it maps to a SVN repository, or a directory within a SVN repository.
+    In local, in workspace it maps to a directory which is a SVN working copy,
+    including SVN metadata in .svn directory.
+  
+  - If the component is managed in **ClearCase**:
+
+    In remote, it maps to a config spec to select contents in one or several ClearCase VOBs.
+    In local, in workspace it maps to a directory which is a snapshot view with that config spec.
+
+  - If the component is a **directory** stored in a shared folder:
+
+    Then in local, in workspace it maps to a directory, as well as a meta-data file in parallel to describe it.
+    
+  - If the component is a **file** stored in a shared folder:
+
+    Then in local, in workspace it maps to a file, as well as a meta-data file in parallel to describe it.
+    
+- **Container**
+
+  A container is to contain components, while itself may quite thin: just few files always. 
+  The most interesting file in container is the metadata file named *_stream* (and *_stream_\** if any), 
+  which stores the information of components' configuration.
+  
+  In CMGlue, the container must be managed in **Git**.
+  In remote, it maps to a public Git repository. 
+  In local, its working tree's root is the workspace's root.
+
+- **Stream**
+
+  A stream is a project level 'branch', not component level.
+  The configuration of a stream of a project specify for each component which branch or tag should the stream contain.
+  For a component, if it's on a branch, then the user could download the tip of the branch to workspace, 
+  do local modification, and then upload to public.
+  For a component, if it's on a tag, then the user could download the snapshot of that tag. 
+
+  The configuration of a stream is stored in file *_stream* (and *_stream_\** if any) in container.
+  
+- **Baseline**
+
+  A baseline is a project level 'tag', not component level.
+  The configuration of the baseline of a project specify for each component which tag should the baseline contain.
+
+  The configuration of a baseline is stored in the container's tag's annotation.
+  Please see Git's manual for the concept of a tag's annotation.
+
+- **Local branch, remote-tracking branch, and branch pair**
+
+  They are some Git special terms. It's widely used in this document as the container is under Git.
+  In Git, a **local branch** is a branch in local repository and be 'owned' by local repository. 
+  For example, *master*.
+  While a **remote-tracking branch** is a branch in local repository but just a 'copy' of a branch in remote/public repository.
+  For example, *origin/master*.
+  A local branch always based on a remote-tracking branch, and follow it.
+  So, here we call them a **branch pair**.
+  Details please read Git documents.
+
+  
+Commands
+========
+
+cmg download
+------------
+
+Name
+````
+cmg download -- Download/sync/update from remote repositories/places to local.
+
+Synopsis
+````````
+cmg download [-h|--help] [<tag>|<remote-tracking branch>|<local branch>]
+
+Description
+```````````
+This command will download/sync/update both container and components' content 
+from remote/public repositories/places to local workspace.
+
+It will firstly sync/update the container, to a branch or tag, according to the paramater you gave,
+and then it will read the stream/baseline's configuration_ stored in container,
+and download/sync/update each component, to a branch or tag, according to the configuration_.
+
+Here the word 'download' doesn't means remove all in local and re-download, 
+which cost much time and may lost local modifications.
+Here 'download' means sync/update the local from remote repositories.
+When you download a branch, local modifications will be merged with remote changes.
+While if you download a tag, you will get exactly the tag's content, with warning if you will lost local modifications.
+Of course if a component does not exist yet in workspace, the 'download' will be a real download.
+
+You may download a baseline first, and then download a stream later, that's OK.
+You are free to switch among tags and streams.
+
+Options
+```````
+(no paramater)
+    If no paramater was given,
+    CMGlue will firstly sync/update the container's current branch,
+    and then read the stream's configuration, 
+    and download/sync/update each component accordingly.
+
+-h, --help
+    Show help information.
+
+<tag>
+    If a tag's name was given,
+    CMGlue will firstly sync/update the container to that tag,
+    and then read the baseline's configuration, 
+    and download/sync/update each component accordingly.
+
+<remote-tracking branch>
+    If a remote-tracking branch's name (such as *origin/master*) was given,
+    CMGlue will firstly find the branch pair in container, sync/update the container on that branch pair,
+    and then read the baseline's configuration, 
+    and download/sync/update each component accordingly.
+
+<local branch>
+    If a local branch's name (such as *master*) was given,
+    CMGlue will firstly find the branch pair in container, sync/update the container on that branch pair,
+    and then read the baseline's configuration, 
+    and download/sync/update each component accordingly.
+
+Various version control tools
+`````````````````````````````
+(TBD)
+
+- Git
+  
+  If the component is expected to be on a branch (branch pair in fact), 
+  then CMGlue will run *git fetch*; and then *git checkout* the local branch;
+  *git merge* or *git rebase* to update local branch from remote-tracking branch.
+  If the component is expected to be on a tag,
+  then CMGlue will run *git fetch*; and then *git checkout* the tag.
+  No matter branch or tag, CMGlue will firstly check if the working tree is clean:
+  No un-commited modification, no newly created file, etc.
+
+    
+cmg status
+----------
+
+Name
+````
+cmg status -- Show status/diff information of container and each component.
+
+Synopsis
+````````
+cmg status [-h|--help] [<tag>|<remote-tracking branch>|<local branch>]
+
+Description
+```````````
+This command will show the status of the container and all components' in your workspace: 
+Any local modifications? How far the local 'behind' the remote? And so on.
+
+It will firstly check the status of the container, compare it with the parameter you gave.
+And then it will read stream/baseline configuration_ stored in container,
+and check the status of each component, compare it with the configuration_.
+
+It always be used before upload your modifications to public, to see what will happen. 
+While it could also be used to compare two baselines/branches: *cmg download* one of them,
+and then run *cmg status* with another one as paramater. 
+This method could be used before merge from a baseline or another stream to current stream.
+
+Options
+```````
+(no paramater)
+    If no paramater was given,
+    CMGlue will firstly check the container's current branch,
+    and then read the stream's configuration, 
+    and check each component accordingly.
+
+-h, --help
+    Show help information.
+
+<tag>
+    If a tag's name was given,
+    CMGlue will firstly check the container against the tag,
+    and then read the baseline's configuration, 
+    and check each component accordingly against the configuration.
+
+<remote-tracking branch>
+    If a remote-tracking branch's name (such as *origin/master*) was given,
+    CMGlue will firstly find the branch pair in container, check the container's status against it,
+    and then read the stream's configuration (from current *_stream* and *_stream_\** file in workspace),
+    and check each component accordingly against the configuration.
+
+<local branch>
+    If a local branch's name (such as *master*) was given,
+    CMGlue will firstly find the branch pair in container, check the container's status against it,
+    and then read the stream's configuration (from current *_stream* and *_stream_\** file in workspace),
+    and check each component accordingly against the configuration.
+
+
+Various version control tools
+`````````````````````````````
+(TBD)
+
+- Git
+  
+  For each component under Git, CMGlue will firstly run *git fetch* and then check:
+  - Is the working tree on expected branch (branch pair in fact) or tag?
+  - If branch, does the remote-tracking branch have multiple local branch?
+  - If branch, is the local branch ahead the remote-tracking branch? Or behind? Or diverged?
+  - Is the working tree clean or not?
+
+    
+cmg upload
+----------
+
+Name
+````
+cmg upload -- Upload/deliver local modifications to remote repositories.
+
+Synopsis
+````````
+cmg upload [-h|--help] [<tag>|<remote-tracking branch>|<local branch>]
+
+Description
+```````````
+This command will upload/deliver local modifications in your workspace,
+both in container and in each components, to remote repositories.
+
+It will firstly upload modifications in all components, and finally upload modifications in container itself.
+It will upload the stream/baseline configuration metadata, besides 'real modifications'.
+It could upload a stream, as well as upload a baseline.
+When upload a component, if it's on a branch, it will upload local modifications to the tip of the branch in remote repository.
+When upload a component, if it's a tag, the behavior will depends on the type of version control tool.
+
+Options
+```````
+(no paramater)
+    If no paramater was given,
+    CMGlue will firstly get current branch in container, 
+    read current stream's configuration,
+    and then upload each component accordingly.
+    Finally it will upload the modifications in container.
+
+-h, --help
+    Show help information.
+
+<tag>
+    If a tag's name was given,
+    CMGlue will firstly get baseline configuration according to this tag in container,
+    and then upload tags in each component accordingly.
+    Finally it will upload the tag in container.
+
+<remote-tracking branch>
+    If a remote-tracking branch's name (such as *origin/master*) was given,
+    CMGlue will firstly check to make sure it just indicates the current branch pair.
+    then read the stream's configuration,
+    and then upload each component accordingly.
+    Finally it will upload the modifications in container.
+
+<local branch>
+    If a local branch's name (such as *origin/master*) was given,
+    CMGlue will firstly check to make sure it just indicates the current branch pair.
+    then read the stream's configuration,
+    and then upload each component accordingly.
+    Finally it will upload the modifications in container.
+
+Various version control tools
+`````````````````````````````
+(TBD)
+
+- Git
+  
+  If in a component (or the container) it is expected to upload modifications on branch,
+  then CMGlue will check to make sure it's currently on a correct branch pair,
+  with clean working tree. Then CMGlue will call *git push*. 
+  Please notice that *git push* could only do a fast-forward merge at remote repository.
+  It means you'd better do a *cmg download* before upload.
+
+  If in a component (or the container) it expected to upload a tag,
+  then CMGlue will call *git push* to upload it.
+  It means both the tag and the related history revisions will be upload, but without branch head point.
+
+    
+cmg freeze
+----------
+
+Name
+````
+cmg freeze -- Create baseline.
+
+Synopsis
+````````
+cmg freeze -h|--help|<tag> [<old_tag>]
+
+Description
+```````````
+This command will create a new baseline for the project. 
+
+For each component, you may select an existing tag if you are on it, or create a new tag for that component.
+After that, CMGlue will write out a file contain the new baseline configuration to let you review/revise.
+Finally, CMGlue will create a new tag in container, with its annotation to record the baseline configuration.
+
+Please notice this command will not upload the tag in container to remote repository, 
+it means other guys can not see the baseline you just created.
+(That's a good thing, isn't it?) You should call *cmg upload* if you wanna upload.
+
+Options
+```````
+-h, --help
+    Show help information.
+
+<tag>
+    If a tag's name was given,
+    CMGlue will finally in container create this tag, which represent the new baseline.
+
+<old_tag>
+    If an old tag's name was given,
+    CMGlue will use this, which indicates an old baseline, 
+    as a reference when write the configuration of the new baseline: 
+    In each component, CMGlue will firstly see if it's on some existing tag(s).
+    If (one of) the existing tag is used to made up the old baseline,
+    then it will be reused for the new baseline, instead of create new tag for that component.
+
+
+Various version control tools
+`````````````````````````````
+(TBD)
+
+- Git
+  
+  In a component (or the container), the new tag will be created in local repository, 
+  without upload to remote repository. That means you have chance to verify them before upload.
+
+
+.. _configuration:
+
+Configurations
+==============
+
+Stream configuration
+--------------------
+
+The stream configuration is stored in file *_stream* in the root directory of the workspace 
+(which also the root directory of the container). Here comes a typical one::
+
+    [comp1]
+        type = git
+        url = C:\cmg_demo\remote\component1.git
+        branch = origin/comp1_br1
+
+    [folder2\comp2]
+        type = git
+        url = C:\cmg_demo\remote\component1.git
+        tag = comp2_tag1
+
+Each section is a component, the section name in [] is the relative path of the location of the component within the workspace.
+The *type* attribute indicate the version control tool which manage this component. (Currently it support Git only.)
+Other attributes are different for different version control tools. See below for details.
+While generally it indicates where is the remote repository to download and upload, 
+as well as whether it should follow a branch or just on a tag.
+
+While the format of the configuration could support variables. Example below are just equal to example above::
+
+    [DEFAULT]
+        remote_root = C:\cmg_demo\remote
+
+    [comp1]
+        type = git
+        url = %(remote_root)s\component1.git
+        branch = origin/comp1_br1
+
+    [folder1\comp2]
+        type = git
+        url = %(remote_root)s\component2.git
+        tag = comp2_tag1
+
+The *[DEFAULT]* is not a component but a section to store variable definition.
+
+
+Various version control tools
+`````````````````````````````
+(TBD)
+
+- Git
+  
+  - Attribute *url* should be the location of remote repository, for *git fetch*.
+  - Attribute *pushurl* is optional, for *git push*. If unprovided, it will equal to *url*.
+  - *branch* is the name of remote-tracking branch (such as *origin/master*) or local branch (such as *master*). Remote-tracking branch is highly recommended.
+  - *tag* is a tag name. You must set either *branch* or *tag*.
+        
+Stream local configuration
+--------------------------
+
+The stream local configuration is stored in file *_stream_<branch>* in the root directory of the workspace.
+For examle, if the container is on local branch *master* following remote-tracking branch *origin/master*,
+then CMGlue will read *_stream* first, and then read *_stream_origin_master* if it exists, 
+and then read *_stream_master* if it exists.
+
+The reason for stream local configuration files is, if you do modifications on both *_stream* for some temporary purpose
+and on real codes in container which is normal modifications,
+then you will always want to upload your changes on real codes, but do not want to upload your changes on file *_stream*.
+It's pretty tricky, so that stream local configuration files come in, instead of the modifications on stream configuration file.
+Generally, stream local configuration files should not under Git's version control, to reduce the accidents to commit/upload them.
+
+The format of stream local configuration is as same as stream configuration.
+The value in it will add to or overwrite the stream configuration.
+While it's unnessesary to restatement everything in local configuration, just some special ones to add/change are enough.
+
+
+Baseline configuration
+----------------------
+
+The baseline configuration is stored in the container's tags' annotations. 
+Please see Git documents for the meanning of tag's annotation.
+
+The format of baseline configuration is as same as stream configuration.
+While generally each component should always on a tag/snapshot, not on a branch / floating point.
+
+During the baseline creation via *cmg freeze* command, 
+CMGlue will put your new baseline's configuration into file *_baseline* in *.git* directory in your container.
+You may review and revise it before the creation of the tag in container.
+
+Content of .gitignore
+---------------------
+
+Below is a typical *.gitignore* file in your container::
+
+    _stream_*
+
+    comp1
+    folder1/comp2
+
+The first part is to ignore stream local configuration files such as *_stream_master*.
+It helps you to modify stream configuration locally and temporarily, with out publish it.
+(It will not ignore stream configuration file *_stream* which should under version control.)
+The second part is to ignore components the container contain.
+It should always be */* **not** *\\* to separate path, even on Windows.
+
+BTW, you may probably want to add other patterns to *.gitignore* file in container and each component. 
+Such as *\*.bak* and *\*.orig*.
+
+CMGlue configuration
+--------------------
+
+CMGlue itself has some configuration variables which have their default values (in file *common.py* if you are interested).
+You may change their values to change the behavour of CMGlue. They are:
+
+*verbose*
+    Default value is *False*. If set to *True*, the output of CMGlue command will contains much more details.
+
+*gitrebase*
+    Default value is *True*. If set to *False*, when download a component/container under Git, 
+    CMGlue will call *git merge* instead of *git rebase*, to fresh local branch from remote-tracking branch.
+
+*online*
+    Default value is *True*. If set to *False*, CMGlue will not communicate with remote repositories.
+    For example, for *cmg download*, in a component/container under Git, CMGlue will not call *git fetch*,
+    but could still switch among tags/branches stored in Git local repository.
+
+To change these variable's values, of course you may just modify CMGlue's source code, 
+while geneally you should modify them in configuration files. CMGlue stores these variables within Git configuration files.
+It could be: *$GIT_DIR/config* in container, or *~/.gitconfig* which is user-specific configuration file,
+or *$(prefix)/etc/gitconfig* which is system-wide configuration file. 
+Please see Git documents especially *git config* for details.
+
+Below is a typical CMGlue configuration section in a Git configuration file::
+
+    [cmg]
+        verbose = true
+        gitrebase = true
+        online = true
+
+You needn't specify all variables here. Any one you do not specify will just be the default value.
+
+
+Global variables
+----------------
+
+In the beginning of CMGlue source code file *common.py*, there are two global variables you may be interested in:
+
+*STREAMFILE = "_stream"*
+    The file in root of container which stores the stream configuration.
+
+*BASELINEFILE = "_baseline"*
+    It's a temporary file in .git directory in container generated by *cmg freeze* to store the baseline configuration
+    for user to review and revise.
+    Finally *cmg freeze* will use this file's content to create tag's annotation to record baseline.
+
+
+.. _SOP:
+
+Standard Operating Procedure
+============================
+
+Even if you have a SOP (Standard Operating Procedure), please be flexible in a balanced way, 
+to fit for your business need case by case.
+
+Below we will describe the most frequent procedures, with demo. 
+To be simple enough, in the demo, all Git repositories, no matter remote or local,
+will be under a common local directory. Say,
+
+- *~/cmg_demo/remote* for remote repositories,
+- *~/cmg_demo/cm* for the CM engineer's local repositories,
+- *~/cmg_demo/tom* for developer Tom's local repositories, etc.
+
+This demo is for Linux and Windows. The major differents are:
+
+- In path name: slash '*/*' on Linux while back slash '*\\*' on Windows.
+- The root of demo environment: *~/cmg_demo/* on Linux and *C:\\cmg_demo\\* on Windows.
+- To create an empty file: *touch a_file* on Linux and *type nul > a_file* on Windows.
+
+CM create the project
+---------------------
+
+1. Prerequisites: There are Git remote repositories for components: (on Linux)
+
+::
+
+    mkdir ~/cmg_demo
+    cd ~/cmg_demo
+    mkdir remote
+    mkdir cm
+    mkdir tom
+    
+    cd remote
+    git init --bare component1.git
+    cd ../cm
+    git clone ~\cmg_demo\remote\component1.git component1
+    cd component1
+    git commit --allow-empty -m "init"
+    git push origin HEAD:master
+    git push origin HEAD:comp1_br1
+    git fetch
+    git checkout -b comp1_br1 origin/comp1_br1
+    echo 1st in component 1 > component1.txt
+    git add .
+    git commit -m "1st in component 1"
+    git push
+    cd ..\..
+    
+    cd remote
+    git init --bare component2.git
+    cd ../cm
+    git clone ~/cmg_demo/remote/component2.git component2
+    cd component2
+    git commit --allow-empty -m "init"
+    git push origin HEAD:master
+    git push origin HEAD:comp2_br1
+    git fetch
+    git checkout -b comp2_br1 origin/comp2_br1
+    echo 1st in component 2 > component2.txt
+    git add .
+    git commit -m "1st in component 2"
+    git push
+    git tag comp2_tag1
+    git push --tags
+    cd ../..
+
+Or on Windows:
+
+::
+
+    C:
+    mkdir C:\cmg_demo
+    cd C:\cmg_demo
+    mkdir remote
+    mkdir cm
+    mkdir tom
+    
+    cd remote
+    git init --bare component1.git
+    cd ..\cm
+    git clone C:\cmg_demo\remote\component1.git component1
+    cd component1
+    git commit --allow-empty -m "init"
+    git push origin HEAD:master
+    git push origin HEAD:comp1_br1
+    git fetch
+    git checkout -b comp1_br1 origin/comp1_br1
+    echo 1st in component 1 > component1.txt
+    git add .
+    git commit -m "1st in component 1"
+    git push
+    cd ..\..
+    
+    cd remote
+    git init --bare component2.git
+    cd ..\cm
+    git clone C:\cmg_demo\remote\component2.git component2
+    cd component2
+    git commit --allow-empty -m "init"
+    git push origin HEAD:master
+    git push origin HEAD:comp2_br1
+    git fetch
+    git checkout -b comp2_br1 origin/comp2_br1
+    echo 1st in component 2 > component2.txt
+    git add .
+    git commit -m "1st in component 2"
+    git push
+    git tag comp2_tag1
+    git push --tags
+    cd ..\..
+
+    
+Commands above created two components. *component1* has a branch named *comp1_br1*,
+*component2* has a branch named *comp2_br1*, as well as a tag named *comp2_tag1*.
+
+Tip 1: You need a *master* branch on remote repository, 
+or later you will meet several trouble as you don't have this default branch.
+
+2. Create remote repository as well as local repository for container. Create and checkout a branch acting as a stream: (On Linux)
+
+::
+
+    cd remote
+    git init --bare container.git
+    cd ../cm
+    git clone ~/cmg_demo/remote/container.git workspace
+    cd workspace
+    touch _stream
+    git add .
+    git commit -m "init"
+    git push origin HEAD:master
+    git push origin HEAD:stream1
+    git fetch
+    git checkout -b stream1 origin/stream1
+    
+Or on Windows:
+
+::    
+
+    cd remote
+    git init --bare container.git
+    cd ..\cm
+    git clone C:\cmg_demo\remote\container.git workspace
+    cd workspace
+    type nul > _stream
+    git add .
+    git commit -m "init"
+    git push origin HEAD:master
+    git push origin HEAD:stream1
+    git fetch
+    git checkout -b stream1 origin/stream1
+
+
+Commands above created *container.git* as component, and cloned it to *workspace* acting as workspace.
+Currently it's on branch *stream1* acting as a stream.
+
+Tip 1: You need a *_stream* file on *master* branch at very begining, 
+otherwise later developer who just cloned the container can not run CMGlue because of CMGlue can not find *_stream* on default checkout branch *master*.
+
+3. In workspace, modify *_stream* file to include your components: (on Linux)
+
+::
+
+    [DEFAULT]
+        remote_root = ~/cmg_demo/remote 
+    
+    [comp1]
+        type = git
+        url = %(remote_root)s/component1.git
+        branch = origin/comp1_br1
+    
+    [folder1/comp2]
+        type = git
+        url = %(remote_root)s/component2.git
+        tag = comp2_tag1
+
+Or on Windows:
+
+::    
+
+    [DEFAULT]
+        remote_root = C:\cmg_demo\remote 
+    
+    [comp1]
+        type = git
+        url = %(remote_root)s\component1.git
+        branch = origin/comp1_br1
+    
+    [folder1\comp2]
+        type = git
+        url = %(remote_root)s\component2.git
+        tag = comp2_tag1
+
+
+So, the stream will select branch *comp1_br1* in *component1*, as well as tag *comp2_tag1* in *component2*.
+
+4. Create/modify .gitignore file, to ignore components as well as stream configuration files:
+
+::    
+
+    echo _stream_*>>.gitignore
+    echo comp1>>.gitignore
+    echo folder1/comp2>>.gitignore
+    
+So, stream local configuration file such as *_stream_stream1* (which does not exist yet) will be ignored by Git version control.
+And the two component's working tree will be ignored by Git version control in the container.
+
+Tip 1: If on Windows, don't add any space before *>>*, or *.gitignore* will contain space at the end of each line that Git can not understand.
+
+Tip 2: On Windows GUI you can not create/rename a file with file name start from a ., such as *.gitignore*.
+As showed above, you may create the file from command line.
+
+5. Run *cmg download* to have a test. Skip (option 3) the warning that your container is not clean:
+
+::    
+
+    cmg download
+
+Browsing the workspace, you could see the 2 components.
+
+6. Run *cmg status* to check current status:
+
+::    
+
+    cmg status
+
+You could see you have 2 files (*.gitignore* and *_stream*) to commit to local repository of the container.
+
+7. Run *cmg upload* to upload, including commit your newly created files to Git local repository firstly:
+
+::    
+
+    cmg upload
+
+8. Run *cmg freeze* to create a initial baseline:
+
+::
+
+    cmg freeze baseline1
+
+9. Run *cmg upload* to upload this baseline:
+
+::    
+
+    cmg upload baseline1
+
+    
+Finished.    
+    
+Developer initializes his environment
+-------------------------------------
+
+1. Clone the remote repository of container to local: (On Linux)
+
+::
+
+    cd ~/cmg_demo/tom
+    git clone ../remote/container.git workspace
+    cd workspace
+
+Or on Windows:
+
+::
+
+    cd C:\cmg_demo\tom
+    git clone ..\remote\container.git workspace
+    cd workspace
+
+
+
+2. Run *cmg download* to download components.
+
+::
+
+    cmg download stream1
+
+
+Developer's daily work
+----------------------
+
+1. Run *cmg download* to update workspace: (On Linux)
+
+::
+
+    cd ~/cmg_demo/tom/workspace
+    cmg download
+
+Or on Windows:
+
+::
+
+    cd C:\cmg_demo\tom\workspace
+    cmg download
+
+2. Develope, review, unit test ...
+
+::
+
+    echo modify in container >> container.txt
+    cd comp
+    echo modify in component1 >> component1.txt
+
+3. Run *cmg download* to update workspace, including commit your modifications to local repository firstly if any.
+
+::
+    
+    cmg download
+    
+4. Build and smoke test.
+
+5. Run *cmg upload* to upload, including commit your modifications to local repository firstly if any.
+
+::    
+
+    cmg upload
+
+
+CM setup continuous integration
+-------------------------------
+
+The CI (continuous integration) tool should monitor both the container's and all components' corresponding branches.
+When any change is detected, the CI tool should:
+
+1. Run *cmg download* to get last minute update.
+
+2. Build and smoke test.
+
+
+CM create baseline
+------------------
+
+1. Run *cmg download* to get the last content: (On Linux)
+
+::
+
+    cd ~/cmg_demo/cm/workspace
+    cmg download
+
+Or on Windows:
+
+::
+
+    cd C:\cmg_demo\cm\workspace
+    cmg download
+
+2. Build and test.
+
+3. Run *cmg baseline* to create the baseline, based on previous.
+
+::
+
+    cmg freeze baseline2 baseline1
+
+4. Run *cmg upload* to upload the baseline.
+
+::
+
+    cmg upload baseline2
+
+
+Developer/CM merge from baseline or another stream
+--------------------------------------------------
+
+1. Run *cmg download* to get the content of the stream to merge to: (On Linux)
+
+::
+
+    cd ~/cmg-demo/cm/workspace
+    cmg download stream1
+
+Or on Windows:
+
+::
+
+    cd C:\cmg-demo\cm\workspace
+    cmg download stream1
+
+
+2. Run *cmg status* to compare the source baseline/stream and target stream.
+
+::
+
+    cmg status baseline1
+
+3. For container and each component, merge from source tag/branch to target branch if necessary.
+
+::
+
+    (git merge/rebase ...)
+
+4. Build and test.
+
+5. Run *cmg upload* to upload.
+
+::
+
+   cmg upload
+
+   
+To develope/extend CMGlue
+=========================
+
+- Hosting
+
+  The source codes of CMGlue itself is stored in xxxxxxxxxxx (TBD) under Git. 
+  Your may clone the repository to start your work.
+
+- Documentation
+
+  This document (in html) is generated from *cmg.txt*, via tool Docutils: (On Unix)
+
+::  
+    rst2html cmg_manual.txt cmg_manual.html
+
+Or on Windows it is:
+
+::
+
+    rst2html.py cmg_manual.txt cmg_manual.html
+  
+See http://docutils.sourceforge.net/ for details.
+
+- Packaging
+
+  The file *build.py* may give you some hint. 
+  Details about packaging in Python pls see http://docs.python.org/py3k/distutils/index.html.
+  
+- Add another VC tool
+
+  To add another version control tool (for example, iVer which doesn't exist in this world) to CMGlue to support, 
+  you need to do following modifications:
+
+  - In file *commands.py*, take care of lines similar to::
+
+        if type.lower() == 'git':
+            git.xxxxxx(xxxxxx)
+
+    Add corresponding lines for iVer.
+
+  - In a new file *iver.py*, you write all details.
+
+  - Modify the *cmg_manual.txt*, for *component* section, and all sections under name *Various version control tools*.

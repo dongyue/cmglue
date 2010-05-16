@@ -1,0 +1,12 @@
+README.txt
+cmg
+cmg.bat
+cmg_create_demo
+cmg_create_demo.bat
+cmg_manual.txt
+cmg_manual.html
+setup.py
+cmglib/__init__.py
+cmglib/commands.py
+cmglib/common.py
+cmglib/git.py
