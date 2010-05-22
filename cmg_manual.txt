@@ -1,13 +1,11 @@
-.. -*- coding: utf-8 -*-
-
 =============
 CMGlue Manual
 =============
 
-:Date: 2010-05-11
-:Revision: 0.5
-:Web site: (TBD)
-:Copyright: (TBD)
+:Author: Dong Yue
+:Web site: http://cmglue.sourceforge.net/
+:Source code: http://github.com/dongyue/cmglue
+:Copyright: under BSD license
 
 .. contents::
 .. sectnum::
@@ -23,7 +21,7 @@ to manage a workspace which may contains multiple components
 that may from various version control tools such as Git and SVN (Subversion), 
 or even just from a shared folder.
 
-Note: currently CMGlue supports Git only.
+**Note**: currently CMGlue supports Git only.
 
 Why CMGlue?
 -----------
@@ -114,14 +112,14 @@ Prerequisites
 Besides using your package management tool (on Linux),
 you may try this link to download Git and install: http://git-scm.com/download
 
-2. Git settings: Make sure you set *user.name* and *user.email* in Git.
+2. Git config: Make sure you set *user.name* and *user.email* in Git.
 
-3. Git settings: Make sure you set *merge.tool* in Git. (Always *kdiff3*)
+3. Git config: Make sure you set *merge.tool* in Git. (Always *kdiff3*)
 
-4. Git settings: Make sure the value of *color.ui* is **not** *always*. 
+4. Git config: Make sure the value of *color.ui* is **not** *always*. 
    *auto* is OK. 
 
-5. Git settings: Make sure the value of *core.editor* is a text editor and
+5. Git config: Make sure the value of *core.editor* is a text editor and
    **works well** with Git. 
    It could be *nano* on Linux, or *AkelPad.exe* on Windows.
 
@@ -152,8 +150,12 @@ On Unix you needn't set it generally.
 Install
 -------
 
-Un-zip/un-package CMGlue installation package, enter the directory, 
-and then (On Linux)::
+1. Download the installation package from http://cmglue.sourceforge.net/.
+   *.tar.gz* file is for Linux users, while *.zip* is for Windows users.
+
+2. Un-zip/un-package it.
+
+3. Go to the directory, and then (On Linux)::
     
     sudo ./setup.py install
     
@@ -333,7 +335,6 @@ Options
 
 Various version control tools
 `````````````````````````````
-(TBD)
 
 - Git
   
@@ -403,7 +404,6 @@ Options
 
 Various version control tools
 `````````````````````````````
-(TBD)
 
 - Git
   
@@ -470,7 +470,6 @@ Options
 
 Various version control tools
 `````````````````````````````
-(TBD)
 
 - Git
   
@@ -528,7 +527,6 @@ Options
 
 Various version control tools
 `````````````````````````````
-(TBD)
 
 - Git
   
@@ -583,7 +581,6 @@ The *[DEFAULT]* is not a component but a section to store variable definition.
 
 Various version control tools
 `````````````````````````````
-(TBD)
 
 - Git
   
@@ -1098,12 +1095,12 @@ To develope/extend CMGlue
 
 - Hosting
 
-  The source codes of CMGlue itself is stored in xxxxxxxxxxx (TBD) under Git. 
+  The source codes of CMGlue itself is stored in http://github.com/dongyue/cmglue under Git. 
   Your may clone the repository to start your work.
 
 - Documentation
 
-  This document (in html) is generated from *cmg.txt*, via tool Docutils: (On Unix)
+  This document (in html) is generated from *cmg_manual.txt*, via tool Docutils: (On Unix)
 
 ::  
     rst2html cmg_manual.txt cmg_manual.html
