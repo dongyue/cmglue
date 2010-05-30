@@ -19,8 +19,6 @@ to manage a workspace which may contains multiple components
 that may from various version control tools such as Git and SVN (Subversion), 
 or even just from a shared folder.
 
-**Note**: currently CMGlue supports Git only.
-
 
 Installation
 ============
@@ -31,43 +29,45 @@ Prerequisites
 1. Git should be installed. Type below to verify::
 
     git --help
-    
-Besides using your package management tool (on Linux),
-you may try this link to download Git and install: http://git-scm.com/download
+ 
+   Besides using your package management tool (on Linux),
+   you may try this link to download Git and install: http://git-scm.com/download
 
-2. Git config: Make sure you set *user.name* and *user.email* in Git.
+2. Git should be well set::
 
-3. Git config: Make sure you set *merge.tool* in Git. (Always *kdiff3*)
+    git config --global user.name "Tang Sanzang"
+    git config --global user.email "sanzang.tang@xitian.com"
+    git config --global color.ui "auto"
+    git config --global core.editor "nano"
+    git config --global merge.tool "kdiff3"
 
-4. Git config: Make sure the value of *color.ui* is **not** *always*. 
-   *auto* is OK. 
+   - *color.ui* should be *auto*, not *always*. 
+   - *kdiff3* is the recommended merge tool. Please install it if you haven't. 
+   - The editor could be *nano* in Linux or *AkelPad* in Windows. Please install
+     it if you haven't.
 
-5. Git config: Make sure the value of *core.editor* is a text editor and
-   **works well** with Git. 
-   It could be *nano* on Linux, or *AkelPad.exe* on Windows.
-
-6. SVN and so on should be installed, if some of your codes are under their 
+3. SVN and so on should be installed, if some of your codes are under their 
    control.
 
-7. Python version 3.0 or above should be installed. 
+4. Python version 3.0 or above should be installed. 
    Type below to verify (on Linux)::
 
     python3 --version
 
-On Windows please use::
+   On Windows please use::
 
     python --version
    
-Besides using your package management tool (on Linux),
-you may try this link to dowload Python and install: 
-http://www.python.org/ftp/python/
+   Besides using your package management tool (on Linux),
+   you may try this link to dowload Python and install: 
+   http://www.python.org/ftp/python/
 
-8. Make sure your PATH's value includes Python's path and Python's scripts'
+5. Make sure your PATH's value includes Python's path and Python's scripts'
    path. On Windows it might be::
 
     C:\Python31;C:\Python31\Scripts
-    
-On Unix you needn't set it generally.
+
+   On Unix you needn't set it generally.
 
     
 Install
@@ -78,17 +78,16 @@ Install
 
 2. Un-zip/un-package it.
 
-3. Go to the directory, and then (On Linux)::
+3. Go to the directory, and then (on Linux)::
     
     sudo ./setup.py install
-    
-On Windows it probably be::
+
+   On Windows it probably is::
 
     setup.py install
 
 That's all. For more options and information about Python packages installation:
 http://docs.python.org/py3k/install/index.html
-
 
 Test & Demo
 -----------

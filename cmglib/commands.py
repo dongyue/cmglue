@@ -3,6 +3,8 @@ import sys
 
 from cmglib import common
 from cmglib import git
+from cmglib import svn
+from cmglib import file
 
 def download_usage():
     print("""
@@ -106,6 +108,12 @@ def download(args):
         type = config.get(component, 'type')
         if type.lower() == 'git':
             git.download(root, config, component)
+        elif type.lower() == 'svn' or type.lower() == 'subversion':
+            svn.download(root, config, component)
+        elif type.lower() == 'fl' or type.lower() == 'file':
+            file.download(root, config, component, True)
+        elif type.lower() == 'dir' or type.lower() == 'directory':
+            file.download(root, config, component, False)
         else:
             sys.stderr.write("Failed: bad format of stream/baseline config: ")
             sys.stderr.write("type '" + type + "' is not supported.")
@@ -223,6 +231,12 @@ def status(args):
         type = config.get(component, 'type')
         if type.lower() == 'git':
             git.status(root, config, component)
+        elif type.lower() == 'svn' or type.lower() == 'subversion':
+            svn.status(root, config, component)
+        elif type.lower() == 'fl' or type.lower() == 'file':
+            file.status(root, config, component)
+        elif type.lower() == 'dir' or type.lower() == 'directory':
+            file.status(root, config, component)
         else:
             sys.stderr.write("Failed: bad format of stream/baseline config: ")
             sys.stderr.write("type '" + type + "' is not supported.")
@@ -267,11 +281,13 @@ def upload(args):
     git.get_cmg_cfg(root)
     print("---- " + root)
     
-    if not common.cfgs['online']:
+    if common.cfgs['online']:
+        git.fetch(root)
+    else:
         sys.stderr.write("Failed: CMG is running under offline mode. No way to upload.")
-        download_usage()
+        upload_usage()
         sys.exit(2)
-        
+
     local = remote = tag = ""
     if point == "":
         (local, remote) = git.get_current_br_pair(root)
@@ -317,6 +333,9 @@ def upload(args):
                 "' that follow remote-tracking branch '" + remote_now + "'.")
             sys.exit(2)
             
+    
+    git.cleanup_working_tree(root)
+    
     config = None
     if tag == "":
         config = common.get_stream_cfg(root, local, remote)
@@ -333,15 +352,19 @@ def upload(args):
         type = config.get(component, 'type')
         if type.lower() == 'git':
             git.upload(root, config, component)
+        elif type.lower() == 'svn' or type.lower() == 'subversion':
+            svn.upload(root, config, component)
+        elif type.lower() == 'fl' or type.lower() == 'file':
+            file.upload(root, config, component)
+        elif type.lower() == 'dir' or type.lower() == 'directory':
+            file.upload(root, config, component)
         else:
             sys.stderr.write("Failed: bad format of stream/baseline config: ")
             sys.stderr.write("type '" + type + "' is not supported.")
             sys.exit(2)
 
     print("---- (back to) " + root)
-    git.fetch(root)
     if tag == "":
-        git.cleanup_working_tree(root)
         if common.cfgs['gitrebase']:
             git.rebase(root, remote)
         else:
@@ -385,12 +408,18 @@ def freeze(args):
     root = common.get_root()
     git.get_cmg_cfg(root)
     print("---- " + root)
+
+    if common.cfgs['online']:
+        git.fetch(root)
+    else:
+        print("Warning: CMG is running under offline mode. No interaction with remote.")
+
+    git.cleanup_working_tree(root)
     
     if git.is_tag(root, tag):
         sys.stderr.write("Failed: '" + tag + "' is an existing tag.")
         sys.exit(2)
 
-    git.cleanup_working_tree(root)
     (local_now, remote_now) = git.get_current_br_pair(root)
     config_now = common.get_stream_cfg(root, local_now, remote_now)
     
@@ -411,6 +440,12 @@ def freeze(args):
         type = config_now.get(component, 'type')
         if type.lower() == 'git':
             git.freeze(root, config_now, config_ref, component, tag)
+        elif type.lower() == 'svn' or type.lower() == 'subversion':
+            svn.freeze(root, config_now, config_ref, component, tag)
+        elif type.lower() == 'fl' or type.lower() == 'file':
+            file.freeze(root, config_now, config_ref, component, tag)
+        elif type.lower() == 'dir' or type.lower() == 'directory':
+            file.freeze(root, config_now, config_ref, component, tag)
         else:
             sys.stderr.write("Failed: bad format of stream/baseline config: ")
             sys.stderr.write("type '" + type + "' is not supported.")

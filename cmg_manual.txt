@@ -21,8 +21,6 @@ to manage a workspace which may contains multiple components
 that may from various version control tools such as Git and SVN (Subversion), 
 or even just from a shared folder.
 
-**Note**: currently CMGlue supports Git only.
-
 Why CMGlue?
 -----------
 
@@ -56,7 +54,7 @@ A quick tour
 Firstly you need to install CMGlue and creat the demo environment. 
 See section Installation_ below.
 
-Please go to the empty directory *tom* in the demo environment, and run: (On Linux)
+Please go to the empty directory *tom* in the demo environment, and run: (on Linux)
 
 ::
     
@@ -108,43 +106,45 @@ Prerequisites
 1. Git should be installed. Type below to verify::
 
     git --help
-    
-Besides using your package management tool (on Linux),
-you may try this link to download Git and install: http://git-scm.com/download
+ 
+   Besides using your package management tool (on Linux),
+   you may try this link to download Git and install: http://git-scm.com/download
 
-2. Git config: Make sure you set *user.name* and *user.email* in Git.
+2. Git should be well set::
 
-3. Git config: Make sure you set *merge.tool* in Git. (Always *kdiff3*)
+    git config --global user.name "Tang Sanzang"
+    git config --global user.email "sanzang.tang@xitian.com"
+    git config --global color.ui "auto"
+    git config --global core.editor "nano"
+    git config --global merge.tool "kdiff3"
 
-4. Git config: Make sure the value of *color.ui* is **not** *always*. 
-   *auto* is OK. 
+   - *color.ui* should be *auto*, not *always*. 
+   - *kdiff3* is the recommended merge tool. Please install it if you haven't. 
+   - The editor could be *nano* in Linux or *AkelPad* in Windows. Please install
+     it if you haven't.
 
-5. Git config: Make sure the value of *core.editor* is a text editor and
-   **works well** with Git. 
-   It could be *nano* on Linux, or *AkelPad.exe* on Windows.
-
-6. SVN and so on should be installed, if some of your codes are under their 
+3. SVN and so on should be installed, if some of your codes are under their 
    control.
 
-7. Python version 3.0 or above should be installed. 
+4. Python version 3.0 or above should be installed. 
    Type below to verify (on Linux)::
 
     python3 --version
 
-On Windows please use::
+   On Windows please use::
 
     python --version
    
-Besides using your package management tool (on Linux),
-you may try this link to dowload Python and install: 
-http://www.python.org/ftp/python/
+   Besides using your package management tool (on Linux),
+   you may try this link to dowload Python and install: 
+   http://www.python.org/ftp/python/
 
-8. Make sure your PATH's value includes Python's path and Python's scripts'
+5. Make sure your PATH's value includes Python's path and Python's scripts'
    path. On Windows it might be::
 
     C:\Python31;C:\Python31\Scripts
-    
-On Unix you needn't set it generally.
+
+   On Unix you needn't set it generally.
 
     
 Install
@@ -155,11 +155,11 @@ Install
 
 2. Un-zip/un-package it.
 
-3. Go to the directory, and then (On Linux)::
+3. Go to the directory, and then (on Linux)::
     
     sudo ./setup.py install
-    
-On Windows it probably be::
+
+   On Windows it probably is::
 
     setup.py install
 
@@ -225,15 +225,17 @@ In the comming chapters, we will use following terms for convenience:
 
   - If the component is a **directory** stored in a shared folder:
 
-    Then in local, in workspace it maps to a directory, as well as a meta-data file in parallel to describe it.
+    Then in local, in workspace it maps to a directory,
+    as well as a meta-data file (*\*.egg-info*) in parallel to describe it.
     
   - If the component is a **file** stored in a shared folder:
 
-    Then in local, in workspace it maps to a file, as well as a meta-data file in parallel to describe it.
+    Then in local, in workspace it maps to a file,
+    as well as a meta-data file (*\*.egg-info*) in parallel to describe it.
     
 - **Container**
 
-  A container is to contain components, while itself may quite thin: just few files always. 
+  A container is to contain components, while itself may quite thin: always just few files. 
   The most interesting file in container is the metadata file named *_stream* (and *_stream_\** if any), 
   which stores the information of components' configuration.
   
@@ -341,12 +343,21 @@ Various version control tools
   If the component is expected to be on a branch (branch pair in fact), 
   then CMGlue will run *git fetch*; and then *git checkout* the local branch;
   *git merge* or *git rebase* to update local branch from remote-tracking branch.
-  If the component is expected to be on a tag,
-  then CMGlue will run *git fetch*; and then *git checkout* the tag.
-  No matter branch or tag, CMGlue will firstly check if the working tree is clean:
+  If the component is expected to be on a tag or a revision,
+  then CMGlue will run *git fetch*; and then *git checkout* the tag/revision.
+  No matter branch or tag/revision, CMGlue will firstly check if the working tree is clean:
   No un-commited modification, no newly created file, etc.
 
-    
+- SVN
+  
+  CMGlue will run *svn switch* to check out / switch to a branch's tip, or a given revision on a branch, or tag.
+  If the working copy contain un-committed changes, then merge will happen if switch to a branch's tip,
+  or a warning will be given if switch to a given revision on a branch, or tag.
+  
+- Shared file or directory
+  
+  CMGlue will copy the file/directory from shared folder to local workspace. If anything exists, overwrite.
+  
 cmg status
 ----------
 
@@ -408,12 +419,30 @@ Various version control tools
 - Git
   
   For each component under Git, CMGlue will firstly run *git fetch* and then check:
-  - Is the working tree on expected branch (branch pair in fact) or tag?
-  - If branch, does the remote-tracking branch have multiple local branch?
-  - If branch, is the local branch ahead the remote-tracking branch? Or behind? Or diverged?
-  - Is the working tree clean or not?
+  
+  * Is the working tree on expected branch (branch pair in fact) or tag?
+  * If branch, does the remote-tracking branch have multiple local branch?
+  * If branch, is the local branch ahead the remote-tracking branch? Or behind? Or diverged?
+  * Is the working tree clean or not?
 
-    
+- SVN
+  
+  For each component under SVN, CMGlue will check:
+  
+  * Is the working copy on expected branch's tip, given revision on a branch, or the given tag?
+  * Is the working copy clean or not?
+
+- Shared file or directory
+  
+  For each component from shared file or directory, CMGlue will check:
+  
+  * Does the workspace contain it already?
+  * Does the workspace contain the correct version?
+  
+  Please notice that CMGlue will not check/compare the real content of the component.
+  It just trusts the *egg-info* file, to save time.
+
+  
 cmg upload
 ----------
 
@@ -483,7 +512,20 @@ Various version control tools
   then CMGlue will call *git push* to upload it.
   It means both the tag and the related history revisions will be upload, but without branch head point.
 
-    
+  Revision will not be uploaded. Please upload branch or tag instead of.
+  
+- SVN
+  
+  If the working copy is on a tag or a given revision of a branch, modifications in working copy will not be committed.
+  Only if the working copy is to follow the tip of a branch will the modifications in working copy be committed.
+  
+  Before *svn commit* CMGlue will firstly call *svn switch* to update/switch, if necessary.
+
+- Shared file or directory
+  
+  CMGlue will not upload them, as in most cases it's unnecessary.
+  If you do need upload, please do it manually.  
+
 cmg freeze
 ----------
 
@@ -532,7 +574,20 @@ Various version control tools
   
   In a component (or the container), the new tag will be created in local repository, 
   without upload to remote repository. That means you have chance to verify them before upload.
+  
+  In a component (not the container), an alternative way to record a 'snapshot' is record the revision (SHA1).
+  CMGlue supports it too.
 
+- SVN
+  
+  In a component, the new tag will be created in (remote) repository via *svn copy*.
+  
+  In a component, an alternative way to record a 'snapshot' is record the revision number.
+  CMGlue supports it too.
+
+- Shared file or directory
+  
+  CMGlue will take the url in *egg-info* file as the snapshot of this component. 
 
 .. _configuration:
 
@@ -543,17 +598,24 @@ Stream configuration
 --------------------
 
 The stream configuration is stored in file *_stream* in the root directory of the workspace 
-(which also the root directory of the container). Here comes a typical one::
+(which also the root directory of the container). Here comes a typical one: (on Windows)
+
+::
 
     [comp1]
         type = git
         url = C:\cmg_demo\remote\component1.git
         branch = origin/comp1_br1
 
-    [folder2\comp2]
+    [folder1\comp2]
         type = git
-        url = C:\cmg_demo\remote\component1.git
+        url = C:\cmg_demo\remote\component2.git
         tag = comp2_tag1
+
+    [folder1\comp3]
+        type = git
+        url = C:\cmg_demo\remote\component3.git
+        revision = 6e5a1287
 
 Each section is a component, the section name in [] is the relative path of the location of the component within the workspace.
 The *type* attribute indicate the version control tool which manage this component. (Currently it support Git only.)
@@ -576,6 +638,11 @@ While the format of the configuration could support variables. Example below are
         url = %(remote_root)s\component2.git
         tag = comp2_tag1
 
+    [folder1\comp3]
+        type = git
+        url = %(remote_root)s\component3.git
+        revision = 6e5a1287
+
 The *[DEFAULT]* is not a component but a section to store variable definition.
 
 
@@ -584,11 +651,32 @@ Various version control tools
 
 - Git
   
-  - Attribute *url* should be the location of remote repository, for *git fetch*.
-  - Attribute *pushurl* is optional, for *git push*. If unprovided, it will equal to *url*.
+  - *type* could be *Git* or *git*.
+  - *url* should be the location of remote repository, for *git fetch*.
+  - *pushurl* is optional, for *git push*. If unprovided, it will equal to *url*.
   - *branch* is the name of remote-tracking branch (such as *origin/master*) or local branch (such as *master*). Remote-tracking branch is highly recommended.
-  - *tag* is a tag name. You must set either *branch* or *tag*.
-        
+  - *revision* is the SHA1 of a revision.
+  - *tag* is a tag name.
+ 
+  To point out a branch, you must set *branch*, without *revision*, without *tag*. 
+  To point out a 'snapshot' of the component/container, you may set *tag*, or set both *branch* and *revision*.
+
+- SVN
+  
+  - *type* could be *SVN* or *svn* or *Subversion* etc.
+  - *branch_url* should be the location of the branch (could be *trunk*) in (remote) repository.
+  - *revision* is the revision number in repository. Together with *branch_url*, it could define a 'snapshot'.
+  - *tags_url* is the url of the directory to store tags.
+  - *tag* is a tag name. Together with *tags_url*, it could define a 'snapshot'.
+ 
+  To point out a branch, you must set *branch_url*, without *revision*, without *tag*. 
+  To point out a 'snapshot' of the component, you may set both *tags_url* and *tag*, or set both *branch_url* and *revision*.
+  
+- Shared file or directory
+
+  - *type* could be *fl* or *File* or *Dir* or *directory* etc.
+  - *url* should be the location of the file/directory at remote shared folder.
+  
 Stream local configuration
 --------------------------
 
@@ -621,20 +709,34 @@ During the baseline creation via *cmg freeze* command,
 CMGlue will put your new baseline's configuration into file *_baseline* in *.git* directory in your container.
 You may review and revise it before the creation of the tag in container.
 
+egg-info file
+---------------
+
+If a component is just a file or directory copy from shared place, 
+then there will be a egg-info file *some_component.egg-info* created by CMGlue automatically.
+The content of this file is just the source's URL. This file is not under version control.
+
 Content of .gitignore
 ---------------------
 
 Below is a typical *.gitignore* file in your container::
 
     _stream_*
+    
+    *.egg-info
 
     comp1
     folder1/comp2
+    folder1/comp3
 
 The first part is to ignore stream local configuration files such as *_stream_master*.
 It helps you to modify stream configuration locally and temporarily, with out publish it.
 (It will not ignore stream configuration file *_stream* which should under version control.)
-The second part is to ignore components the container contain.
+
+The second part is to ignore egg-info files such as *component5.egg-info*, 
+which should not be under version control.
+
+The thirde part is to ignore components the container contain.
 It should always be */* **not** *\\* to separate path, even on Windows.
 
 BTW, you may probably want to add other patterns to *.gitignore* file in container and each component. 
@@ -655,9 +757,19 @@ You may change their values to change the behavour of CMGlue. They are:
 
 *online*
     Default value is *True*. If set to *False*, CMGlue will not communicate with remote repositories.
-    For example, for *cmg download*, in a component/container under Git, CMGlue will not call *git fetch*,
+    For example, for *cmg download*, in a component/container under Git,
+    CMGlue will not call *git fetch*,
     but could still switch among tags/branches stored in Git local repository.
 
+*addnewfile*
+    Default value is *True*. If set to *False*, 
+    when commit to local repository (such as in Git) or remote repository (such as in SVN),
+    the version control tool (Git/SVN...) will only care for the modified file(s), 
+    exclude the newly created file(s) which is(are) not under track yet. 
+    It's safer if you always have build result files
+    and you do not want to add them to ignore list (such as .gitignore in Git).
+    *Causion*: CMG will not hand file remove, rename etc. even if you set *addnewfile* to *True*.
+    
 To change these variable's values, of course you may just modify CMGlue's source code, 
 while geneally you should modify them in configuration files. CMGlue stores these variables within Git configuration files.
 It could be: *$GIT_DIR/config* in container, or *~/.gitconfig* which is user-specific configuration file,
@@ -667,9 +779,10 @@ Please see Git documents especially *git config* for details.
 Below is a typical CMGlue configuration section in a Git configuration file::
 
     [cmg]
-        verbose = true
+        verbose = false
         gitrebase = true
         online = true
+        addnewfile = true
 
 You needn't specify all variables here. Any one you do not specify will just be the default value.
 
@@ -806,10 +919,10 @@ Or on Windows:
 Commands above created two components. *component1* has a branch named *comp1_br1*,
 *component2* has a branch named *comp2_br1*, as well as a tag named *comp2_tag1*.
 
-Tip 1: You need a *master* branch on remote repository, 
+Tip: You need a *master* branch on remote repository, 
 or later you will meet several trouble as you don't have this default branch.
 
-2. Create remote repository as well as local repository for container. Create and checkout a branch acting as a stream: (On Linux)
+2. Create remote repository as well as local repository for container. Create and checkout a branch acting as a stream: (on Linux)
 
 ::
 
@@ -847,7 +960,7 @@ Or on Windows:
 Commands above created *container.git* as component, and cloned it to *workspace* acting as workspace.
 Currently it's on branch *stream1* acting as a stream.
 
-Tip 1: You need a *_stream* file on *master* branch at very begining, 
+Tip: You need a *_stream* file on *master* branch at very begining, 
 otherwise later developer who just cloned the container can not run CMGlue because of CMGlue can not find *_stream* on default checkout branch *master*.
 
 3. In workspace, modify *_stream* file to include your components: (on Linux)
@@ -898,9 +1011,9 @@ So, the stream will select branch *comp1_br1* in *component1*, as well as tag *c
 So, stream local configuration file such as *_stream_stream1* (which does not exist yet) will be ignored by Git version control.
 And the two component's working tree will be ignored by Git version control in the container.
 
-Tip 1: If on Windows, don't add any space before *>>*, or *.gitignore* will contain space at the end of each line that Git can not understand.
+Tip: If on Windows, don't add any space before *>>*, or *.gitignore* will contain space at the end of each line that Git can not understand.
 
-Tip 2: On Windows GUI you can not create/rename a file with file name start from a ., such as *.gitignore*.
+Tip: On Windows GUI you can not create/rename a file with file name start from a ., such as *.gitignore*.
 As showed above, you may create the file from command line.
 
 5. Run *cmg download* to have a test. Skip (option 3) the warning that your container is not clean:
@@ -943,7 +1056,7 @@ Finished.
 Developer initializes his environment
 -------------------------------------
 
-1. Clone the remote repository of container to local: (On Linux)
+1. Clone the remote repository of container to local: (on Linux)
 
 ::
 
@@ -971,7 +1084,7 @@ Or on Windows:
 Developer's daily work
 ----------------------
 
-1. Run *cmg download* to update workspace: (On Linux)
+1. Run *cmg download* to update workspace: (on Linux)
 
 ::
 
@@ -1022,7 +1135,7 @@ When any change is detected, the CI tool should:
 CM create baseline
 ------------------
 
-1. Run *cmg download* to get the last content: (On Linux)
+1. Run *cmg download* to get the last content: (on Linux)
 
 ::
 
@@ -1054,7 +1167,7 @@ Or on Windows:
 Developer/CM merge from baseline or another stream
 --------------------------------------------------
 
-1. Run *cmg download* to get the content of the stream to merge to: (On Linux)
+1. Run *cmg download* to get the content of the stream to merge to: (on Linux)
 
 ::
 

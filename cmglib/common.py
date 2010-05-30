@@ -7,14 +7,15 @@ import re
 import configparser  #for Python 3.x
 #import ConfigParser  #for Python 2.x
 
-VERSION = "0.5.1" #CMG version
+VERSION = "0.9.1" #CMG version
 
 STREAMFILE = "_stream" #The file in root of container which stores the stream configuration.
 BASELINEFILE = "_baseline" # The file in .git in container which stores the baseline configuration to write to tag
 
 cfgs = {'verbose': False, \
     'gitrebase': True, \
-    'online': True}
+    'online': True, \
+    'addnewfile': True}
 """Some global CMG configuations that alternate CMG's behavior.
 
 * verbose: True if you want CMG show verbose information.
@@ -62,6 +63,8 @@ def command_free(cmd, dir):
 
     pipe = subprocess.Popen(cmd, shell=True, cwd=dir, universal_newlines=True)
     pipe.communicate()
+    
+    return pipe.returncode
 
 
 DEFAULTSECT = "DEFAULT" #the defult section name. See codes in base class.

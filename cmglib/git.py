@@ -98,6 +98,50 @@ def is_on_tag(root, tag):
     
     return False
 
+def is_revision(root, revision):
+    """Check if it is an existing revision."""
+
+    cmd = "git log --pretty=oneline -1 " + revision
+    (out, err, code) = common.command(cmd, root)
+    if err:
+        sys.stderr.write("Failed: " + cmd + "\n" + err)
+        sys.exit(2)
+
+    match = re.match(revision, out)
+    if match != None:
+        return True
+
+    return False
+    
+def is_on_revision(root, revision):
+    """Check if it is currently on this revision."""
+
+    cmd = "git log --pretty=oneline -1 HEAD"
+    (out, err, code) = common.command(cmd, root)
+    if err:
+        sys.stderr.write("Failed: " + cmd + "\n" + err)
+        sys.exit(2)
+    
+    match = re.match(revision, out)
+    if match != None:
+        return True
+
+    return False
+
+def get_current_revision(root):
+    """Get current revision."""
+
+    cmd = "git log --pretty=oneline -1 HEAD"
+    (out, err, code) = common.command(cmd, root)
+    if err:
+        sys.stderr.write("Failed: " + cmd + "\n" + err)
+        sys.exit(2)
+    
+    match = re.match(r"(\S+)\s+", out)
+    if match != None:
+        return match.group(1)
+  
+    
 def get_cmg_cfg(root):
     """To get CMG configurations from Git config file(s).
     
@@ -238,30 +282,6 @@ def get_status(root):
     print("Something to deal with:")
     print(out)
 
-def get_remote(root):
-    """Get parameters of `origin' in Git config"""
-
-    url = pushurl = ""
-    
-    cmd = "git config remote.origin.url"
-    (out, err, code) = common.command(cmd, root)
-    if err:
-        sys.stderr.write("Failed: " + cmd + "\n" + err)
-        sys.exit(2)
-    url = out.strip()
-        
-    cmd = "git config remote.origin.pushurl"
-    (out, err, code) = common.command(cmd, root)
-    if err:
-        sys.stderr.write("Failed: " + cmd + "\n" + err)
-        sys.exit(2)    
-    pushurl = out.strip()
-    
-    if pushurl == "":
-        pushurl = url
-    
-    return (url, pushurl)
-
 def create_new_tag(root, tag):
     cmd = "git tag " + tag
     (out, err, code) = common.command(cmd, root)
@@ -272,8 +292,8 @@ def create_new_tag(root, tag):
     print("Created new tag '" + tag + "'.")
 
     
-def get_current_tag(root, baseline):
-    """Get (create if have to) a tag for HEAD.
+def get_current_point(root, baseline):
+    """Get (create if have to) a tag or revision for HEAD.
     
     `baseline' is the tag name of container.
     """
@@ -287,11 +307,13 @@ def get_current_tag(root, baseline):
     tags = []
     for line in out.splitlines():
         tags.append(line.strip())
-        
-    print("1: create a new tag for this component.")
-    print("2: create a new tag with baseline name '" + baseline + "'.")
+    
+    revision_now = get_current_revision(root)
+    print("1: use revision for this component: " + revision_now)
+    print("2: create a new tag for this component.")
+    print("3: create a new tag with baseline name '" + baseline + "'.")
 
-    i = 3
+    i = 4
     if len(tags) != 0:
         for tag in tags:
             print(str(i) + ": select existing tag '" + tag + "'.")
@@ -300,21 +322,22 @@ def get_current_tag(root, baseline):
     while True:
         choice = input("? ")
         if choice == '1':
+            return (revision_now, "revision")
+        elif choice == '2':
             new_tag = ""
             while True:
                 new_tag = input("New tag name: ")
                 if new_tag.strip() != "":
                     break
             create_new_tag(root, new_tag)
-            return new_tag
-        elif choice == '2':
+            return (new_tag, "tag")
+        elif choice == '3':
             create_new_tag(root, baseline)
-            return baseline
+            return (baseline, "tag")
         for j in len(tags):
-            if str(j+2) == choice:
+            if str(j+3) == choice:
                 print("Selected existing tag '" + tags[j-1] + "'.")
-                return tags[j-1]
-
+                return (tags[j-1], "tag")
         
 def remind_multi_local(root, remote):
     """Check if the remote-tracking branch has multiple local branches. Remind if so."""
@@ -461,12 +484,13 @@ def cleanup_working_tree(root):
                     continue
                 break
             elif choice == '1':
-                cmd = "git add ."
-                (out, err, code) = common.command(cmd, root)
-                if err:
-                    sys.stderr.write("Failed: " + cmd + "\n" + err)
-                    continue
-                cmd = "git commit"
+                if common.cfgs['addnewfile']:
+                    cmd = "git add ."
+                    (out, err, code) = common.command(cmd, root)
+                    if err:
+                        sys.stderr.write("Failed: " + cmd + "\n" + err)
+                        continue
+                cmd = "git commit -a"
                 common.command_free(cmd, root)
                 break
     else:
@@ -494,7 +518,7 @@ def cleanup_working_tree(root):
 def checkout(root, point, type):
     """Checkout a branch or tag of the container / a component.
     
-    `point' is the branch or tag's name. The value of `type' should be 'branch' or 'tag'.
+    `point' is the branch or tag's name. The value of `type' should be 'branch' or 'tag' or 'revision'.
     """
 
     cmd = "git checkout " + point
@@ -555,7 +579,6 @@ def merge(root, remote):
         print("Nothing to do: Already up-to-date.")    
     else:
         print("Success to merge fully automatically.")
-    
 
 def push(root, remote):
 
@@ -583,7 +606,7 @@ def push(root, remote):
             elif choice == '1':
                 break
     elif match3 != None:
-        print("Nothing to do: Already up-to-date in remote repository.")
+        print("Nothing to do: Branch already up-to-date in remote repository.")
     else:
         print("Success to push.")
         
@@ -612,7 +635,7 @@ def push_tag(root, tag):
             elif choice == '1':
                 break
     elif match3 != None:
-        print("Nothing to do: Already exists in remote repository.")
+        print("Nothing to do: Tag already exists in remote repository.")
     else:
         print("Success to push tag.")
 
@@ -627,7 +650,13 @@ def create_tag(root, tag, bl_cfg_fl_name):
         sys.exit(2)
 
     print("Success to create tag '" + tag + "'.")
-        
+
+
+#
+# below are commands called from commands.py for each component.
+#
+
+    
 def download(root, config, component):
     """Download/sync/update a component from Git remote repository to Git local repository and working tree.
     
@@ -655,7 +684,7 @@ def download(root, config, component):
     if common.cfgs['online']:
         fetch(root)
 
-    local = remote = tag = ""
+    local = remote = tag = revision = ""
     if config.has_option(component, "branch"):
         point = config.get(component, "branch")
         if is_local_br(root, point):
@@ -684,22 +713,29 @@ def download(root, config, component):
         else:
             sys.stderr.write("Failed: '" + point + "' is not a tag.")
             sys.exit(2)
+    elif config.has_option(component, "revision"):
+        point = config.get(component, "revision")
+        if is_revision(root, point):
+            revision = point
+        else:
+            sys.stderr.write("Failed: '" + point + "' is not a revision.")
+            sys.exit(2)
     else:
         sys.stderr.write("Failed: bad format of stream/baseline config: ")
-        sys.stderr.write("No 'branch' or 'tag' option in '" + component + "' section.")
+        sys.stderr.write("No 'branch' or 'tag' or 'revision' option in '" + component + "' section.")
         sys.exit(2)
 
+    cleanup_working_tree(root)
     if local != "":
-        cleanup_working_tree(root)
         checkout(root, local, "branch")
         if common.cfgs['gitrebase']:
             rebase(root, remote)
         else:
             merge(root, remote)
-    else:
-        cleanup_working_tree(root)
+    elif tag != "":
         checkout(root, tag, "tag")
-
+    elif revision != "":
+        checkout(root, revision, "revision")
     
 def status(root, config, component):
     """Show status of a component.
@@ -729,7 +765,7 @@ def status(root, config, component):
     if common.cfgs['online']:
         fetch(root)
 
-    local = remote = tag = ""
+    local = remote = tag = revision = ""
     if config.has_option(component, "branch"):
         point = config.get(component, "branch")
         if is_local_br(root, point):
@@ -755,11 +791,16 @@ def status(root, config, component):
             tag = point
         else:
             print("Warning: '" + point + "' is not a tag.")
+    elif config.has_option(component, "revision"):
+        point = config.get(component, "revision")
+        if is_revision(root, point):
+            revision = point
+        else:
+            print("Warning: '" + point + "' is not a revision.")
     else:
         sys.stderr.write("Failed: bad format of stream/baseline config: ")
-        sys.stderr.write("No 'branch' or 'tag' option in '" + component + "' section.")
+        sys.stderr.write("No 'branch' or 'tag' or 'revision' option in '" + component + "' section.")
         sys.exit(2)
-
         
     if local != "" and remote != "": #to check if current branch is the given branch
         (local_now, remote_now) = get_current_br_pair(root)
@@ -779,7 +820,12 @@ def status(root, config, component):
         if not is_on_tag(root, tag):
             print("Warning: it's expected to be on tag '" + tag \
                 + "', but currently it's not.")
-        
+
+    elif revision != "": # to check if HEAD on the given revision or not
+        if not is_on_revision(root, revision):
+            print("Warning: it's expected to be on revision '" + revision \
+                + "', but currently it's not.")
+                
     get_status(root)
 
 def upload(root, config, component):
@@ -806,8 +852,10 @@ def upload(root, config, component):
     if config.has_option(component, "pushurl"):
         pushurl = config.get(component, "pushurl")
     set_remote(root, url, pushurl) #remote settings in local repository
-   
-    local = remote = tag = ""
+
+    fetch(root)
+    
+    local = remote = tag = revision = ""
     if config.has_option(component, "branch"):
         point = config.get(component, "branch")
         if is_local_br(root, point):
@@ -836,9 +884,16 @@ def upload(root, config, component):
         else:
             sys.stderr.write("Failed: '" + point + "' is not a tag.")
             sys.exit(2)
+    elif config.has_option(component, "revision"):
+        point = config.get(component, "revision")
+        if is_revision(root, point):
+            revision = point
+        else:
+            sys.stderr.write("Failed: '" + point + "' is not a revision.")
+            sys.exit(2)
     else:
         sys.stderr.write("Failed: bad format of stream/baseline config: ")
-        sys.stderr.write("No 'branch' or 'tag' option in '" + component + "' section.")
+        sys.stderr.write("No 'branch' or 'tag' or 'revision' option in '" + component + "' section.")
         sys.exit(2)
 
     if local != "": #to check if current branch is the given branch
@@ -856,40 +911,73 @@ def upload(root, config, component):
                 "' that follow remote-tracking branch '" + remote_now + "'.")
             sys.exit(2)
 
-            
-    fetch(root)
-    if tag == "":
-        cleanup_working_tree(root)
+    cleanup_working_tree(root)
+    if local != "":
         if common.cfgs['gitrebase']:
             rebase(root, remote)
         else:
             merge(root, remote)
         push(root, remote)
-    else:
+    elif tag != "":
         push_tag(root, tag)
-    
+    elif revision != "":
+        print("Warning: " + revision + " will not be pushed to server side as it's not a branch or tag but revision. " + \
+            "Pls ensure it's on server side manually.")
+
 def freeze(root, config_now, config_ref, component, baseline):
-    """Find out tag (create tag if neccessary) for a component."""
+    """Find out tag (create tag if neccessary) or revision for a component."""
 
     root = os.path.join(root, component) #now it's the root of this component.
     print("---- " + root)
 
-    (url, pushurl) = get_remote(root)
-    config_now.set(component, "url", url)
-    config_now.set(component, "pushurl", pushurl)
+    if not config_now.has_option(component, "url"):
+        sys.stderr.write("Failed: bad format of stream/baseline config: ")
+        sys.stderr.write("No 'url' option in '" + component + "' section.")
+        sys.exit(2)
+    url = config_now.get(component, "url")
 
-    tag_now = ""
+    if not os.path.isdir(os.path.join(root, ".git")):
+        sys.stderr.write("Failed: This component does not exist yet.")
+        sys.exit(2)
+    
+    pushurl = url
+    if config_now.has_option(component, "pushurl"):
+        pushurl = config_now.get(component, "pushurl")
+    set_remote(root, url, pushurl) #remote settings in local repository
+
+    if common.cfgs['online']:
+        fetch(root)
+
+    cleanup_working_tree(root)
+    
+    point_now = type_now = "" #type_now could be "tag" or "revision"
     if config_ref.has_option(component, "tag"):
         tag_ref = config_ref.get(component, "tag")
         if is_on_tag(root, tag_ref):
             print("Still on previous tag '" + tag_ref + "'.")
-            tag_now = tag_ref
+            point_now = tag_ref
+            type_now = "tag"
         else:
             print("No longer on previous tag '" + tag_ref + "'.")
-            tag_now = get_current_tag(root, baseline)
+            (point_now, type_now) = get_current_point(root, baseline)
+    elif config_ref.has_option(component, "revision"):
+        revision_ref = config_ref.get(component, "revision")
+        if is_on_revision(root, revision_ref):
+            print("Still on previous revision '" + revision_ref + "'.")
+            point_now = revision_ref
+            type_now = "revision"
+        else:
+            print("No longer on previous revision '" + revision_ref + "'.")
+            point_now = get_current_revision(root)
+            type_now = "revision"
+            print("Move to revision '" + point_now + "'.")
     else:
-        tag_now = get_current_tag(root, baseline)
+        (point_now, type_now) = get_current_point(root, baseline)
 
-    config_now.set(component, "tag", tag_now)
+    config_now.set(component, type_now, point_now)
+    if type_now == "tag" and config_now.has_option(component, "revision"):
+        config_now.remove_option(component, "revision")
+    if type_now == "revision" and config_now.has_option(component, "tag"):
+        config_now.remove_option(component, "tag")
     if config_now.has_option(component, "branch"):
         config_now.remove_option(component, "branch")
