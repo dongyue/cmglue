@@ -606,16 +606,38 @@ The stream configuration is stored in file *_stream* in the root directory of th
         type = git
         url = C:\cmg_demo\remote\component1.git
         branch = origin/comp1_br1
-
+    
     [folder1\comp2]
         type = git
         url = C:\cmg_demo\remote\component2.git
         tag = comp2_tag1
-
+    
     [folder1\comp3]
         type = git
         url = C:\cmg_demo\remote\component3.git
         revision = 6e5a1287
+    
+    [folder2\comp4]
+        type = svn
+        branch_url = file:///C:/cmg_demo/remote/component4/trunk
+    
+    [folder2\comp5]
+        type = svn
+        branch_url = file:///C:/cmg_demo/remote/component5/trunk
+        revision = 2
+    
+    [folder2\comp6]
+        type = svn
+        tags_url = file:///C:/cmg_demo/remote/component6/tags
+        tag = tag1
+    
+    [file1.txt]
+        type = file
+        url = C:\cmg_demo\remote\file1.txt
+    
+    [dir1]
+        type = dir
+        url = C:\cmg_demo\remote\dir1
 
 Each section is a component, the section name in [] is the relative path of the location of the component within the workspace.
 The *type* attribute indicate the version control tool which manage this component. (Currently it support Git only.)
@@ -627,21 +649,44 @@ While the format of the configuration could support variables. Example below are
 
     [DEFAULT]
         remote_root = C:\cmg_demo\remote
-
+        remote_root_svn = file:///C:/cmg_demo/remote
+    
     [comp1]
         type = git
         url = %(remote_root)s\component1.git
         branch = origin/comp1_br1
-
+    
     [folder1\comp2]
         type = git
         url = %(remote_root)s\component2.git
         tag = comp2_tag1
-
+    
     [folder1\comp3]
         type = git
         url = %(remote_root)s\component3.git
         revision = 6e5a1287
+    
+    [folder2\comp4]
+        type = svn
+        branch_url = %(remote_root_svn)s/component4/trunk
+    
+    [folder2\comp5]
+        type = svn
+        branch_url = %(remote_root_svn)s/component5/trunk
+        revision = 2
+    
+    [folder2\comp6]
+        type = svn
+        tags_url = %(remote_root_svn)s/component6/tags
+        tag = tag1
+    
+    [file1.txt]
+        type = file
+        url = %(remote_root)s\file1.txt
+    
+    [dir1]
+        type = dir
+        url = %(remote_root)s\dir1
 
 The *[DEFAULT]* is not a component but a section to store variable definition.
 
@@ -724,10 +769,14 @@ Below is a typical *.gitignore* file in your container::
     _stream_*
     
     *.egg-info
-
+    
     comp1
     folder1/comp2
-    folder1/comp3
+    folder2/comp3
+    folder2/comp4
+    folder2/comp5
+    file1.txt
+    dir1
 
 The first part is to ignore stream local configuration files such as *_stream_master*.
 It helps you to modify stream configuration locally and temporarily, with out publish it.
